@@ -16,3 +16,5 @@ Explain the data 4)
 Use few slides to cover the technology we used, how to model, 3 slides for each 5)
 Talk about your finding 
 
+3. Sharing PPT link: https://docs.google.com/presentation/d/1pcEVaJTIXu-Fsb6Ce0tuAdrXnrG__9OsLIWezPGoN0c/edit?usp=sharing
+
