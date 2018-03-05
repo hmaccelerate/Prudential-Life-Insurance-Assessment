@@ -18,3 +18,5 @@ Talk about your finding
 
 3. Sharing PPT link: https://docs.google.com/presentation/d/1pcEVaJTIXu-Fsb6Ce0tuAdrXnrG__9OsLIWezPGoN0c/edit?usp=sharing
 
+### Reading Material
+https://cran.r-project.org/doc/contrib/de_Jonge+van_der_Loo-Introduction_to_data_cleaning_with_R.pdf
