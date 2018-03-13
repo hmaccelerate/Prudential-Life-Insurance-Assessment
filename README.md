@@ -20,3 +20,6 @@ Talk about your finding
 
 ### Reading Material
 https://cran.r-project.org/doc/contrib/de_Jonge+van_der_Loo-Introduction_to_data_cleaning_with_R.pdf
+
+### Cleaning Data 
+Link: https://drive.google.com/open?id=1sKFRGoudhvXQcjA2D-q7YNg-ZokzCNzd
