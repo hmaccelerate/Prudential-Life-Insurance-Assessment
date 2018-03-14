@@ -3,10 +3,12 @@
 # install.packages("Hmisc")
 # library(xgboost)
 # install.packages("heuristica")
+# install.packages("forecast")
 require(xgboost)
 library(Matrix)
 library(Hmisc)
 library(caret)
+library(forecast)
 # 1.Data Exploration& Data Cleaning
 #read the data
 train<- read.csv("D:/RWorkSpaces/Data/train_plia.csv")
@@ -39,7 +41,7 @@ continuousFeatures <- c("Product_Info_4", "Ins_Age", "Ht", "Wt", "BMI", "Employm
                          "Family_Hist_2", "Family_Hist_3", "Family_Hist_4", "Family_Hist_5")
 discreteFeatures <- c("Medical_History_1", "Medical_History_10", "Medical_History_15",
                        "Medical_History_24", "Medical_History_32")
-# type conversion
+# type conversion & Cleaning data
 for (feature in categoricalFeatures) {
   train[,feature]<- as.factor(train[,feature])
 }
@@ -68,7 +70,7 @@ hist(train$Response)
 
 #divide the data 
 set.seed(666666666)
-sample_size<- round(nrow(train)*0.3)
+sample_size<- round(nrow(train)*0.2)
 testIndex<- sample(1:nrow(train),sample_size)
 # trainIndex<- setdiff(1:nrow(train),testIndex)
 
@@ -154,12 +156,14 @@ xgb.plot.importance(importance_matrix = importance)
 # Measuring model performance
 mse<- mean((testPred-train[testIndex,"Response"])^2)
 mse
+accuracy(testPred,train[testIndex,"Response"])
+
+
 # cm<- confusionMatrix(testPred,train[testIndex,]$Response)
-# cm
+
 
 # use the cut2 function to divide the result
 library(Hmisc)
 cutPoints <- seq(1.5, 7.5, by = 1)
 cutTrainPred <- as.numeric(cut2(trainPred, c(-Inf, cutPoints, Inf)))
 hist(cutTrainPred)
-
