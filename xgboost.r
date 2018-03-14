@@ -2,10 +2,11 @@
 # install.packages("xgboost")
 # install.packages("Hmisc")
 # library(xgboost)
+# install.packages("heuristica")
 require(xgboost)
 library(Matrix)
 library(Hmisc)
-
+library(caret)
 # 1.Data Exploration& Data Cleaning
 #read the data
 train<- read.csv("D:/RWorkSpaces/Data/train_plia.csv")
@@ -63,56 +64,102 @@ for (feature in discreteFeatures) {
 
 table(train$Response)
 hist(train$Response)
+# write.csv(train,file = "D:/RWorkSpaces/Data/pilrcleaning.csv")
 
 #divide the data 
 set.seed(666666666)
 sample_size<- round(nrow(train)*0.3)
 testIndex<- sample(1:nrow(train),sample_size)
 # trainIndex<- setdiff(1:nrow(train),testIndex)
-#change the data to the matirx
-matrixData<- sparse.model.matrix(Response ~. -1 - Id,train)
 
 
+#change the data to the matirx/ One-hot encoding
+# Formulae Response ~. -1 - Id used under means transform all categorical features but column Response to binary values. 
+# The -1 -id is here to remove the first column and Id colum, which are not useful
+matrixData<- sparse.model.matrix(Response ~. -1 -Id,train)
 test4xgb<- matrixData[testIndex,]
 train4xgb<- matrixData[-testIndex,]
-
 trainDM<- xgb.DMatrix(data=train4xgb, label=train[-testIndex,"Response"])
 
 
-# Feature enginnering: choose the most important features
-
-
-
-
 #Build the model
+
 #setting the model params
 xgbParams<- list(
   # booster which booster to use, can be gbtree or gblinear
-  booster="gbtree",
+  booster = "gbtree",
   #eta control the learning rate: scale the contribution of each tree by a factor of 0 < eta < 1
-  eta=0.01,
-  verbose=1,
+  eta = 0.1, # eta more smaller,  nround more bigger
   # minimum loss reduction required to make a further partition on a leaf node of the tree
-  gamma=0.01,
+  gamma = 0.01,
   # maximum depth of a tree
-  max_depth=10,
+  max_depth = 10,
   # Setting it to 0.5 means that xgboost randomly collected half of the data instances to grow trees and this will prevent overfitting
-  subsample=0.7,
+  subsample = 0.7,
   # subsample ratio of columns when constructing each tree
-  colsample_bytree=0.5,
+  colsample_bytree = 0.5,
   # objective specify the learning task and the corresponding learning objective
-  objective="reg:linear"
+  objective ="reg:linear"
 )
 
+# use the cv to train and prevent the model to overfit
+set.seed(6666666)
+xbgcv<- xgb.cv(
+  data = trainDM,
+  params = xgbParams,
+  early_stopping_rounds = 500, # If set to an integer k, training with a validation set will stop if the performance doesn't improve for k rounds. 
+  #verbose = 1, print evaluation metric ; verbose = 2, also print information about tree
+  verbose = 2, 
+  # Print each n-th iteration evaluation messages when verbose>0.
+  print_every_n = 10,
+  # nthread = 5,
+  nfold = 4, # number of CV folds
+  nround = 1594, # number of trees  Stopping. Best iteration:  [1594]	train-rmse:1.201198+0.009133	test-rmse:1.832124+0.008995
+  maximize = FALSE # the lower the evaluation score the better
+)
 
-
-
-xgb_model<- xgb.train(params = xgbParams,data = trainDM,nrounds = 120)
+# build xgb model
+set.seed(6666666)
+xgb_model<- xgb.train(params = xgbParams,data = trainDM,nrounds = 120,verbose = 2,print_every_n = 10,nthread = 2)
 
 #predict with the model
-pred<- predict(xgb_model,test4xgb)
-hist(pred)
+trainPred<- predict(xgb_model,trainDM)
+testPred<- predict(xgb_model,test4xgb)
 
-cut_points <- seq(1.5, 7.5, by = 0.5)
-train_pred_cut <- as.numeric(cut2(pred, c(-Inf, cut_points, Inf)))
-hist(cut_points)
+#obtain and analyze the information of the prediction
+head(trainPred)
+head(testPred)
+
+summary(trainPred)
+summary(testPred)
+
+hist(trainPred)
+hist(testPred)
+
+importance<- xgb.importance(colnames(train), model =xgb_model )
+head(importance)
+# Feature         Gain        Cover    Frequency
+# 1:  Medical_History_24 2.710853e-01 1.547836e-01 1.043288e-01
+# 2:  Medical_History_23 1.190753e-01 6.532910e-02 7.361876e-02
+# 3:  Medical_History_16 9.185150e-02 6.865597e-02 7.822290e-02
+# 4:  Medical_History_21 7.754870e-02 7.330244e-02 9.588001e-02
+# 5:  Medical_History_25 6.334878e-02 5.903786e-02 1.021454e-01
+# Gain is the improvement in accuracy brought by a feature to the branches it is on.
+# Cover measures the relative quantity of observations concerned by a feature.
+# Frequency is a simpler way to measure the Gain.
+
+xgb.plot.importance(importance_matrix = importance)
+
+
+# Measuring model performance
+mse<- mean((testPred-train[testIndex,"Response"])^2)
+mse
+# cm<- confusionMatrix(testPred,train[testIndex,]$Response)
+# cm
+
+# use the cut2 function to divide the result
+library(Hmisc)
+cutPoints <- seq(1.5, 7.5, by = 1)
+cutTrainPred <- as.numeric(cut2(trainPred, c(-Inf, cutPoints, Inf)))
+hist(cutTrainPred)
+
