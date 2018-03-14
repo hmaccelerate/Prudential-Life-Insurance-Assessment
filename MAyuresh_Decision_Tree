@@ -1,0 +1,59 @@
+
+install.packages("plyr")
+install.packages("wordcloud")
+install.packages("RColorBrewer")
+install.packages("tm")
+install.packages("SnowballC")
+install.packages("devtools")
+install.packages("RSentiment")
+install.packages(c("ggplot2", "e1071", "caret","quanteda","irlba","randomforest"))
+install.packages("compare")
+install.packages("XML")
+install.packages("rvest")
+
+
+#libraries
+library("tm")
+library("rvest")
+library("wordcloud")
+library("RColorBrewer")
+library("tm")
+library("SnowballC")
+library("stringr")
+library("XML")
+library(rpart)
+library(rpart.plot)
+
+
+# Load files
+train_data <- read.csv(file="C:/Sem 4/ADS/Mid_term/Data/datasetcleaned.csv",header = T, sep =",")
+
+test_data <-  read.csv(file="C:/Sem 4/ADS/Mid_term/Data/test.csv",header = T, sep =",")
+
+# finding missng data
+summary(train_data)
+
+# Replacing NA's
+train_data [is.na(train_data)] <- 0
+
+# Building Models
+m1 <- lm(train_data$Response ~ ., data = train_data )
+
+n
+
+plot(m1)
+
+#tree
+tree1 <- rpart(Response ~ . , data = train_data,method="class")
+
+#rpart.plot(tree1,type=2, extra = 102)
+
+
+#predicting values for train
+pred <- predict(tree1,test_data, type = "class")
+
+
+res_dataframe = data.frame(Id = test_data$Id, Response = pred)
+
+
+
